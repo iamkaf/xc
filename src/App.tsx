@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Menu, X } from 'lucide-react';
 import { CodeInput } from './components/CodeInput';
 import { ExplanationDisplay } from './components/ExplanationDisplay';
 import { HistoryPanel } from './components/HistoryPanel';
@@ -20,6 +20,7 @@ function App() {
 	const [currentExplanation, setCurrentExplanation] = useState<Explanation | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
 	// Load history from localStorage on mount
 	useEffect(() => {
@@ -80,16 +81,31 @@ function App() {
 	const handleSelectHistory = useCallback((explanation: Explanation) => {
 		setCurrentExplanation(explanation);
 		setError(null);
+		setIsMobileMenuOpen(false);
 	}, []);
 
 	return (
 		<div className="app">
 			<header className="app-header">
+				<button
+					className="hamburger-button"
+					onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+					aria-label="Toggle menu"
+				>
+					{isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+				</button>
 				<h1 className="app-title">XC</h1>
 			</header>
 
 			<div className="app-layout">
-				<aside className="history-sidebar">
+				{isMobileMenuOpen && (
+					<div
+						className="mobile-drawer-overlay"
+						onClick={() => setIsMobileMenuOpen(false)}
+					/>
+				)}
+
+				<aside className={`history-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
 					<HistoryPanel
 						explanations={explanations}
 						onSelect={handleSelectHistory}

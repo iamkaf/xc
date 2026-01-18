@@ -100,6 +100,8 @@
 	align-items: center;
 	gap: 0.5rem;
 	transition: background 0.2s, transform 0.1s;
+	touch-action: manipulation; /* Prevent double-tap zoom */
+	min-height: 44px; /* iOS touch target minimum */
 }
 
 .explain-button:hover:not(:disabled) {
@@ -113,4 +115,36 @@
 .explain-button:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 767px) {
+	.code-input-header {
+		font-size: 0.8125rem;
+	}
+
+	.code-input-header kbd {
+		display: none; /* Hide keyboard shortcut on mobile */
+	}
+
+	.code-textarea {
+		min-height: 150px;
+		padding: 0.875rem;
+		font-size: 0.8125rem;
+	}
+
+	.code-input.compact .code-textarea {
+		min-height: 60px;
+	}
+
+	.explain-button {
+		padding: 0.75rem 1rem;
+		min-height: 48px; /* Larger touch target on mobile */
+		font-size: 0.9375rem;
+	}
+
+	.language-badge {
+		font-size: 0.6875rem;
+		padding: 0.1875rem 0.5rem;
+	}
 }

@@ -93,9 +93,20 @@
 	color: var(--color-text);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 767px) {
 	.explanation-display {
 		grid-template-columns: 1fr;
 		grid-template-rows: auto 1fr;
+		gap: 0.75rem;
+	}
+
+	.panel-header {
+		padding: 0.625rem 0.875rem;
+	}
+
+	.code-block,
+	.explanation-content {
+		padding: 0.875rem;
+		font-size: 0.8125rem;
 	}
 }

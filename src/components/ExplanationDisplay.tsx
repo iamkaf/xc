@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { Components } from 'react-markdown';
 import hljs from 'highlight.js/lib/core';
 import javascript from 'highlight.js/lib/languages/javascript';
 import typescript from 'highlight.js/lib/languages/typescript';
@@ -74,24 +75,28 @@ export function ExplanationDisplay({ explanation }: ExplanationDisplayProps) {
 				<div className="explanation-content">
 					<ReactMarkdown
 						remarkPlugins={[remarkGfm]}
-						components={{
-							code({ node, inline, className, children, ...props }) {
-								const match = /language-(\w+)/.exec(className || '');
-								const lang = match ? match[1] : '';
+						components={
+							{
+								code(props) {
+									const { className, children, ...rest } = props;
+									const match = /language-(\w+)/.exec(className || '');
+									const lang = match ? match[1] : '';
+									const inline = 'inline' in rest && rest.inline;
 
-								if (!inline && lang) {
-									return (
-										<code className={className} {...props} ref={(codeEl) => {
-											if (codeEl) hljs.highlightElement(codeEl);
-										}}>
-											{children}
-										</code>
-									);
-								}
+									if (!inline && lang) {
+										return (
+											<code className={className} {...rest} ref={(codeEl) => {
+												if (codeEl) hljs.highlightElement(codeEl);
+											}}>
+												{children}
+											</code>
+										);
+									}
 
-								return <code className={className} {...props}>{children}</code>;
-							},
-						}}
+									return <code className={className} {...rest}>{children}</code>;
+								},
+							} as Components
+						}
 					>
 						{explanation.explanation}
 					</ReactMarkdown>

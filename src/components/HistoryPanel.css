@@ -82,4 +82,39 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	max-width: 100%;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 767px) {
+	.history-header {
+		padding: 0.875rem 1rem;
+		font-size: 0.8125rem;
+	}
+
+	.history-list {
+		padding: 0.375rem;
+	}
+
+	.history-item {
+		padding: 0.625rem 0.75rem;
+	}
+
+	.history-language {
+		font-size: 0.5625rem;
+		padding: 0.125rem 0.3125rem;
+	}
+
+	.history-time {
+		font-size: 0.6875rem;
+	}
+
+	.history-item-preview {
+		font-size: 0.6875rem;
+	}
+
+	.history-empty {
+		font-size: 0.8125rem;
+		padding: 1.5rem 1rem;
+	}
 }
