@@ -1,0 +1,116 @@
+.code-input {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	padding: 1.25rem;
+	background: var(--color-bg-elevated);
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	box-shadow: var(--shadow-md);
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.code-input.dragging {
+	border-color: var(--color-accent);
+	box-shadow: var(--shadow-glow);
+}
+
+.code-input.compact {
+	padding: 0.75rem;
+	border: 1px solid var(--color-border-dim);
+}
+
+.code-input-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	color: var(--color-text-dim);
+	font-size: 0.875rem;
+}
+
+.code-input-header kbd {
+	margin-left: auto;
+	padding: 0.25rem 0.5rem;
+	background: var(--color-bg-elevated-2);
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+}
+
+.code-textarea {
+	width: 100%;
+	min-height: 200px;
+	padding: 1rem;
+	background: var(--color-bg);
+	border: 1px solid var(--color-border-dim);
+	border-radius: 4px;
+	color: var(--color-text);
+	font-family: var(--font-mono);
+	font-size: 0.875rem;
+	line-height: 1.6;
+	resize: vertical;
+	outline: none;
+	transition: border-color 0.2s;
+}
+
+.code-textarea:focus {
+	border-color: var(--color-accent);
+}
+
+.code-textarea:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.code-input.compact .code-textarea {
+	min-height: 80px;
+}
+
+.code-input-footer {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.language-badge {
+	padding: 0.25rem 0.625rem;
+	background: var(--color-bg-elevated-2);
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+	color: var(--color-accent);
+	text-transform: uppercase;
+}
+
+.explain-button {
+	margin-left: auto;
+	padding: 0.625rem 1.25rem;
+	background: var(--color-accent);
+	border: none;
+	border-radius: 4px;
+	color: var(--color-bg);
+	font-family: var(--font-display);
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	transition: background 0.2s, transform 0.1s;
+}
+
+.explain-button:hover:not(:disabled) {
+	background: var(--color-accent-dim);
+}
+
+.explain-button:active:not(:disabled) {
+	transform: translateY(1px);
+}
+
+.explain-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}

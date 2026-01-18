@@ -1,12 +1,64 @@
-export default {
-  fetch(request) {
-    const url = new URL(request.url);
+interface Env {
+	OPENROUTER_API_KEY: string;
+}
 
-    if (url.pathname.startsWith("/api/")) {
-      return Response.json({
-        name: "Cloudflare",
-      });
-    }
+export default {
+	async fetch(request, env): Promise<Response> {
+		const url = new URL(request.url);
+		const corsHeaders = {
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods': 'POST, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type',
+		};
+
+		if (request.method === 'OPTIONS') {
+			return new Response(null, { headers: corsHeaders });
+		}
+
+		if (url.pathname === '/api/explain' && request.method === 'POST') {
+			const { code, language } = await request.json() as { code: string; language: string };
+
+			if (!code || typeof code !== 'string') {
+				return Response.json({ error: 'code is required' }, { status: 400, headers: corsHeaders });
+			}
+
+			if (!language || typeof language !== 'string') {
+				return Response.json({ error: 'language is required' }, { status: 400, headers: corsHeaders });
+			}
+
+			const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
+					'Content-Type': 'application/json',
+					'HTTP-Referer': 'https://xc.kaf.sh',
+					'X-Title': 'XC (Xplain Code)'
+				},
+				body: JSON.stringify({
+					model: 'google/gemini-2.5-flash-lite',
+					messages: [
+						{
+							role: 'system',
+							content: 'You are a code explanation assistant. Explain the given code snippet clearly and concisely. Focus on what the code does, how it works, and any important patterns or concepts. Use markdown formatting. Be direct and technical - assume the reader is a developer. Start with an executive summary followed by the full explanation. Don\'t offer follow ups as this is a one-off interaction.',
+						},
+						{
+							role: 'user',
+							content: `Explain this ${language} code:\n\n\`\`\`${language}\n${code}\n\`\`\``,
+						},
+					],
+				}),
+			});
+
+			if (!response.ok) {
+				return Response.json({ error: 'Failed to get explanation' }, { status: 500, headers: corsHeaders });
+			}
+
+			const data = await response.json() as { choices: Array<{ message: { content: string } }> };
+			const explanation = data.choices[0]?.message?.content || 'No explanation received';
+
+			return Response.json({ explanation }, { headers: corsHeaders });
+		}
+
 		return new Response(null, { status: 404 });
-  },
+	},
 } satisfies ExportedHandler<Env>;
