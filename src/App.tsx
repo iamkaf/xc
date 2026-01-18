@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { AlertCircle, Menu, X } from 'lucide-react';
 import { CodeInput } from './components/CodeInput';
 import { ExplanationDisplay } from './components/ExplanationDisplay';
 import { HistoryPanel } from './components/HistoryPanel';
+import { SkeletonLoader } from './components/SkeletonLoader';
 import './App.css';
 
 interface Explanation {
@@ -15,12 +16,31 @@ interface Explanation {
 
 const STORAGE_KEY = 'xc-history';
 
+// Simple debounce hook
+function useDebounce<T extends (...args: never[]) => void>(callback: T, delay: number): T {
+	const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+	return useCallback((...args: Parameters<T>) => {
+		if (timeoutRef.current) clearTimeout(timeoutRef.current);
+		timeoutRef.current = setTimeout(() => callback(...args), delay);
+	}, [callback, delay]) as T;
+}
+
 function App() {
 	const [explanations, setExplanations] = useState<Explanation[]>([]);
 	const [currentExplanation, setCurrentExplanation] = useState<Explanation | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const hamburgerRef = useRef<HTMLButtonElement>(null);
+
+	// Debounced save function
+	const debouncedSave = useDebounce((data: Explanation[]) => {
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+		} catch (error) {
+			console.error('Failed to save history:', error);
+		}
+	}, 500);
 
 	// Load history from localStorage on mount
 	useEffect(() => {
@@ -35,12 +55,12 @@ function App() {
 		}
 	}, []);
 
-	// Save history to localStorage whenever it changes
+	// Save history to localStorage whenever it changes (debounced)
 	useEffect(() => {
 		if (explanations.length > 0) {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(explanations));
+			debouncedSave(explanations);
 		}
-	}, [explanations]);
+	}, [explanations, debouncedSave]);
 
 	const handleExplain = useCallback(async (code: string, language: string) => {
 		setIsLoading(true);
@@ -82,12 +102,19 @@ function App() {
 		setCurrentExplanation(explanation);
 		setError(null);
 		setIsMobileMenuOpen(false);
+		hamburgerRef.current?.focus();
+	}, []);
+
+	const closeMobileMenu = useCallback(() => {
+		setIsMobileMenuOpen(false);
+		hamburgerRef.current?.focus();
 	}, []);
 
 	return (
 		<div className="app">
 			<header className="app-header">
 				<button
+					ref={hamburgerRef}
 					className="hamburger-button"
 					onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
 					aria-label="Toggle menu"
@@ -101,7 +128,7 @@ function App() {
 				{isMobileMenuOpen && (
 					<div
 						className="mobile-drawer-overlay"
-						onClick={() => setIsMobileMenuOpen(false)}
+						onClick={closeMobileMenu}
 					/>
 				)}
 
@@ -122,7 +149,10 @@ function App() {
 					)}
 
 					{!currentExplanation ? (
-						<CodeInput onExplain={handleExplain} isLoading={isLoading} />
+						<>
+							{isLoading && <SkeletonLoader />}
+							<CodeInput onExplain={handleExplain} isLoading={isLoading} hiddenDuringLoad={isLoading} />
+						</>
 					) : (
 						<ExplanationDisplay explanation={currentExplanation} />
 					)}

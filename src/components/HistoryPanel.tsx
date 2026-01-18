@@ -40,16 +40,19 @@ export function HistoryPanel({ explanations, onSelect, selectedId }: HistoryPane
 			</div>
 
 			{explanations.length === 0 ? (
-				<div className="history-empty">
+				<div className="history-empty" role="status">
 					No explanations yet
 				</div>
 			) : (
-				<div className="history-list">
+				<div className="history-list" role="listbox" aria-label="Explanation history">
 					{explanations.map((explanation) => (
 						<button
 							key={explanation.id}
 							onClick={() => onSelect(explanation)}
 							className={`history-item ${explanation.id === selectedId ? 'selected' : ''}`}
+							role="option"
+							aria-selected={explanation.id === selectedId}
+							aria-label={`${explanation.language} code, ${formatTimestamp(explanation.timestamp)}`}
 						>
 							<div className="history-item-meta">
 								<span className="history-language">{explanation.language}</span>

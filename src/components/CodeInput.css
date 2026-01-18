@@ -20,6 +20,18 @@
 	border: 1px solid var(--color-border-dim);
 }
 
+.code-input.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+
 .code-input-header {
 	display: flex;
 	align-items: center;
@@ -28,8 +40,14 @@
 	font-size: 0.875rem;
 }
 
-.code-input-header kbd {
+.header-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
 	margin-left: auto;
+}
+
+.code-input-header kbd {
 	padding: 0.25rem 0.5rem;
 	background: var(--color-bg-elevated-2);
 	border: 1px solid var(--color-border);
@@ -37,6 +55,33 @@
 	font-family: var(--font-mono);
 	font-size: 0.75rem;
 	color: var(--color-text-muted);
+}
+
+.example-button {
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.25rem 0.625rem;
+	height: 28px;
+	background: var(--color-bg-elevated-2);
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	color: var(--color-text-dim);
+	cursor: pointer;
+	transition: all 0.15s;
+	touch-action: manipulation;
+	font-size: 0.75rem;
+	font-family: var(--font-display);
+}
+
+.example-button:hover {
+	background: var(--color-bg-elevated);
+	border-color: var(--color-accent);
+	color: var(--color-accent);
+}
+
+.example-button:active {
+	transform: scale(0.95);
 }
 
 .code-textarea {

@@ -17,8 +17,7 @@
 		"react": "^19.1.1",
 		"react-dom": "^19.1.1",
 		"react-markdown": "^10.1.0",
-		"remark-gfm": "^4.0.1",
-		"shiki": "^3.21.0"
+		"remark-gfm": "^4.0.1"
 	},
 	"devDependencies": {
 		"@cloudflare/vite-plugin": "^1.21.0",
