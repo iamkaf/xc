@@ -93,6 +93,40 @@
 	color: var(--color-text);
 }
 
+/* List styling */
+.explanation-content ul,
+.explanation-content ol {
+	margin-bottom: 1em;
+	padding-left: 1.5em;
+}
+
+.explanation-content li {
+	margin-bottom: 0.5em;
+	line-height: 1.6;
+}
+
+/* Nested lists */
+.explanation-content ul ul,
+.explanation-content ol ol,
+.explanation-content ul ol,
+.explanation-content ol ul {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.explanation-content li > ul,
+.explanation-content li > ol {
+	margin-top: 0.25em;
+}
+
+.explanation-content li p {
+	margin-bottom: 0.25em;
+}
+
+.explanation-content li p:last-child {
+	margin-bottom: 0;
+}
+
 @media (max-width: 767px) {
 	.explanation-display {
 		grid-template-columns: 1fr;

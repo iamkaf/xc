@@ -92,7 +92,6 @@ body {
 	color: var(--color-text);
 	cursor: pointer;
 	border-radius: 4px;
-	transition: background 0.15s;
 }
 
 .hamburger-button:hover {
@@ -109,6 +108,15 @@ body {
 	letter-spacing: -0.02em;
 	color: var(--color-text);
 	text-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+	font-family: var(--font-display);
+}
+
+.app-title:hover {
+	color: var(--color-accent);
 }
 
 .app-layout {

@@ -682,6 +682,19 @@ export function CodeInput({ onExplain, isLoading, compact = false, hiddenDuringL
 			/>
 
 			<div className="code-input-footer">
+				{compact && (
+					<button
+						type="button"
+						onClick={handleLoadExample}
+						className="example-button"
+						title="Load example"
+						aria-label="Load code example"
+					>
+						<Shuffle size={14} />
+						<span>Example</span>
+					</button>
+				)}
+
 				{language && (
 					<span className="language-badge">
 						{language}

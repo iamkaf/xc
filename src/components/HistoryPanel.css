@@ -39,7 +39,6 @@
 	border-radius: 6px;
 	cursor: pointer;
 	text-align: left;
-	transition: background 0.15s, border-color 0.15s;
 }
 
 .history-item:hover {

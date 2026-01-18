@@ -36,6 +36,7 @@ export default {
 				},
 				body: JSON.stringify({
 					model: 'google/gemini-2.5-flash-lite',
+					stream: true,
 					messages: [
 						{
 							role: 'system',
@@ -53,10 +54,13 @@ export default {
 				return Response.json({ error: 'Failed to get explanation' }, { status: 500, headers: corsHeaders });
 			}
 
-			const data = await response.json() as { choices: Array<{ message: { content: string } }> };
-			const explanation = data.choices[0]?.message?.content || 'No explanation received';
-
-			return Response.json({ explanation }, { headers: corsHeaders });
+			// Stream the response directly
+			return new Response(response.body, {
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'text/event-stream',
+				},
+			});
 		}
 
 		return new Response(null, { status: 404 });

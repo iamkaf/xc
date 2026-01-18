@@ -66,6 +66,18 @@ function App() {
 		setIsLoading(true);
 		setError(null);
 
+		// Create a new explanation with empty content immediately
+		const newExplanation: Explanation = {
+			id: Date.now().toString(),
+			code,
+			language,
+			explanation: '',
+			timestamp: Date.now(),
+		};
+
+		setExplanations(prev => [newExplanation, ...prev]);
+		setCurrentExplanation(newExplanation);
+
 		try {
 			const response = await fetch('/api/explain', {
 				method: 'POST',
@@ -78,21 +90,54 @@ function App() {
 				throw new Error(data.error || `Server error: ${response.status}`);
 			}
 
-			const data = await response.json() as { explanation: string };
+			// Read the stream
+			const reader = response.body?.getReader();
+			const decoder = new TextDecoder();
 
-			const newExplanation: Explanation = {
-				id: Date.now().toString(),
-				code,
-				language,
-				explanation: data.explanation,
-				timestamp: Date.now(),
-			};
+			if (!reader) {
+				throw new Error('No response body');
+			}
 
-			setExplanations(prev => [newExplanation, ...prev]);
-			setCurrentExplanation(newExplanation);
+			while (true) {
+				const { value, done } = await reader.read();
+				if (done) break;
+
+				const chunk = decoder.decode(value);
+				const lines = chunk.split('\n');
+
+				for (const line of lines) {
+					if (line.startsWith('data: ')) {
+						const data = line.slice(6);
+						if (data === '[DONE]') continue;
+
+						try {
+							const parsed = JSON.parse(data);
+							const content = parsed.choices?.[0]?.delta?.content;
+							if (content) {
+								setExplanations(prev =>
+									prev.map(exp =>
+										exp.id === newExplanation.id
+											? { ...exp, explanation: exp.explanation + content }
+											: exp
+									)
+								);
+								setCurrentExplanation(prev =>
+									prev?.id === newExplanation.id
+										? { ...prev, explanation: prev.explanation + content }
+										: prev
+								);
+							}
+						} catch (e) {
+							console.error('Failed to parse SSE data:', e);
+						}
+					}
+				}
+			}
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to get explanation';
 			setError(message);
+			// Remove the failed explanation from history
+			setExplanations(prev => prev.filter(exp => exp.id !== newExplanation.id));
 		} finally {
 			setIsLoading(false);
 		}
@@ -110,6 +155,11 @@ function App() {
 		hamburgerRef.current?.focus();
 	}, []);
 
+	const handleReset = useCallback(() => {
+		setCurrentExplanation(null);
+		setError(null);
+	}, []);
+
 	return (
 		<div className="app">
 			<header className="app-header">
@@ -121,7 +171,13 @@ function App() {
 				>
 					{isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
 				</button>
-				<h1 className="app-title">XC</h1>
+				<button
+					className="app-title"
+					onClick={handleReset}
+					aria-label="Go back to input"
+				>
+					XC
+				</button>
 			</header>
 
 			<div className="app-layout">

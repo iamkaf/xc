@@ -7,7 +7,6 @@
 	border: 1px solid var(--color-border);
 	border-radius: 8px;
 	box-shadow: var(--shadow-md);
-	transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .code-input.dragging {
@@ -68,7 +67,6 @@
 	border-radius: 4px;
 	color: var(--color-text-dim);
 	cursor: pointer;
-	transition: all 0.15s;
 	touch-action: manipulation;
 	font-size: 0.75rem;
 	font-family: var(--font-display);
@@ -97,7 +95,6 @@
 	line-height: 1.6;
 	resize: vertical;
 	outline: none;
-	transition: border-color 0.2s;
 }
 
 .code-textarea:focus {
@@ -117,6 +114,11 @@
 	display: flex;
 	align-items: center;
 	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.code-input-footer .example-button {
+	order: -1;
 }
 
 .language-badge {
@@ -144,7 +146,6 @@
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	transition: background 0.2s, transform 0.1s;
 	touch-action: manipulation; /* Prevent double-tap zoom */
 	min-height: 44px; /* iOS touch target minimum */
 }
