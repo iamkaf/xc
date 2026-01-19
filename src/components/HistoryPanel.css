@@ -37,8 +37,9 @@
 	background: transparent;
 	border: 1px solid transparent;
 	border-radius: 6px;
-	cursor: pointer;
 	text-align: left;
+	text-decoration: none;
+	color: inherit;
 }
 
 .history-item:hover {

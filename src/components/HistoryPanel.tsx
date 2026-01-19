@@ -1,4 +1,5 @@
 import { Clock } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import './HistoryPanel.css';
 
 interface Explanation {
@@ -11,11 +12,11 @@ interface Explanation {
 
 interface HistoryPanelProps {
 	explanations: Explanation[];
-	onSelect: (explanation: Explanation) => void;
-	selectedId?: string;
 }
 
-export function HistoryPanel({ explanations, onSelect, selectedId }: HistoryPanelProps) {
+export function HistoryPanel({ explanations }: HistoryPanelProps) {
+	const location = useLocation();
+
 	const formatTimestamp = (timestamp: number) => {
 		const date = new Date(timestamp);
 		const now = new Date();
@@ -32,6 +33,12 @@ export function HistoryPanel({ explanations, onSelect, selectedId }: HistoryPane
 		return lines[0]?.substring(0, 40) + (lines[0]?.length > 40 ? '...' : '');
 	};
 
+	// Get current ID from URL path
+	const getCurrentId = () => {
+		const match = location.pathname.match(/\/explain\/(.+)/);
+		return match ? match[1] : null;
+	};
+
 	return (
 		<div className="history-panel">
 			<div className="history-header">
@@ -46,12 +53,12 @@ export function HistoryPanel({ explanations, onSelect, selectedId }: HistoryPane
 			) : (
 				<div className="history-list" role="listbox" aria-label="Explanation history">
 					{explanations.map((explanation) => (
-						<button
+						<Link
 							key={explanation.id}
-							onClick={() => onSelect(explanation)}
-							className={`history-item ${explanation.id === selectedId ? 'selected' : ''}`}
+							to={`/explain/${explanation.id}`}
+							className={`history-item ${explanation.id === getCurrentId() ? 'selected' : ''}`}
 							role="option"
-							aria-selected={explanation.id === selectedId}
+							aria-selected={explanation.id === getCurrentId()}
 							aria-label={`${explanation.language} code, ${formatTimestamp(explanation.timestamp)}`}
 						>
 							<div className="history-item-meta">
@@ -59,7 +66,7 @@ export function HistoryPanel({ explanations, onSelect, selectedId }: HistoryPane
 								<span className="history-time">{formatTimestamp(explanation.timestamp)}</span>
 							</div>
 							<div className="history-item-preview">{getCodePreview(explanation.code)}</div>
-						</button>
+						</Link>
 					))}
 				</div>
 			)}

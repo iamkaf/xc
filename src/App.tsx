@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { AlertCircle, Menu, X } from 'lucide-react';
-import { CodeInput } from './components/CodeInput';
-import { ExplanationDisplay } from './components/ExplanationDisplay';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
+import { InputView } from './routes/InputView';
+import { ExplanationView } from './routes/ExplanationView';
 import { HistoryPanel } from './components/HistoryPanel';
-import { SkeletonLoader } from './components/SkeletonLoader';
 import './App.css';
 
 interface Explanation {
@@ -25,13 +25,60 @@ function useDebounce<T extends (...args: never[]) => void>(callback: T, delay: n
 	}, [callback, delay]) as T;
 }
 
-function App() {
-	const [explanations, setExplanations] = useState<Explanation[]>([]);
-	const [currentExplanation, setCurrentExplanation] = useState<Explanation | null>(null);
-	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+interface LayoutProps {
+	explanations: Explanation[];
+	children: React.ReactNode;
+}
+
+function Layout({ explanations, children }: LayoutProps) {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const hamburgerRef = useRef<HTMLButtonElement>(null);
+
+	const closeMobileMenu = useCallback(() => {
+		setIsMobileMenuOpen(false);
+		hamburgerRef.current?.focus();
+	}, []);
+
+	return (
+		<div className="app">
+			<header className="app-header">
+				<button
+					ref={hamburgerRef}
+					className="hamburger-button"
+					onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+					aria-label="Toggle menu"
+				>
+					{isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+				</button>
+				<a href="/" className="app-title" aria-label="Go back to input">
+					XC
+				</a>
+			</header>
+
+			<div className="app-layout">
+				{isMobileMenuOpen && (
+					<div
+						className="mobile-drawer-overlay"
+						onClick={closeMobileMenu}
+					/>
+				)}
+
+				<aside className={`history-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+					<HistoryPanel explanations={explanations} />
+				</aside>
+
+				<main className="main-content">
+					{children}
+				</main>
+			</div>
+		</div>
+	);
+}
+
+function App() {
+	const [explanations, setExplanations] = useState<Explanation[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	// Debounced save function
 	const debouncedSave = useDebounce((data: Explanation[]) => {
@@ -62,7 +109,7 @@ function App() {
 		}
 	}, [explanations, debouncedSave]);
 
-	const handleExplain = useCallback(async (code: string, language: string) => {
+	const handleExplain = useCallback(async (code: string, language: string, onNavigate?: (id: string) => void) => {
 		setIsLoading(true);
 		setError(null);
 
@@ -76,7 +123,6 @@ function App() {
 		};
 
 		setExplanations(prev => [newExplanation, ...prev]);
-		setCurrentExplanation(newExplanation);
 
 		try {
 			const response = await fetch('/api/explain', {
@@ -105,13 +151,28 @@ function App() {
 				const chunk = decoder.decode(value);
 				const lines = chunk.split('\n');
 
-				for (const line of lines) {
-					if (line.startsWith('data: ')) {
-						const data = line.slice(6);
-						if (data === '[DONE]') continue;
+				// SSE format can have multi-line JSON, so we need to accumulate data: "data: {...json}"
+				// We'll process each SSE message by accumulating lines until we get complete JSON
+				let sseMessage = '';
 
+				for (const line of lines) {
+					if (!line) continue;
+
+					if (line.startsWith('data: ')) {
+						// Start of a new SSE message
+						sseMessage = line.slice(5); // Everything after "data:"
+					} else if (sseMessage) {
+						// Continuation of the SSE message
+						sseMessage += '\n' + line;
+					} else {
+						// Not SSE data (shouldn't happen in well-formed SSE)
+						continue;
+					}
+
+					// Check if we have a complete SSE message
+					if (sseMessage.trim().endsWith('}')) {
 						try {
-							const parsed = JSON.parse(data);
+							const parsed = JSON.parse(sseMessage);
 							const content = parsed.choices?.[0]?.delta?.content;
 							if (content) {
 								setExplanations(prev =>
@@ -121,17 +182,19 @@ function App() {
 											: exp
 									)
 								);
-								setCurrentExplanation(prev =>
-									prev?.id === newExplanation.id
-										? { ...prev, explanation: prev.explanation + content }
-										: prev
-								);
 							}
 						} catch (e) {
-							console.error('Failed to parse SSE data:', e);
+							// If JSON parsing fails, log the raw message for debugging
+							console.warn('Failed to parse SSE message:', sseMessage, e);
 						}
+						sseMessage = ''; // Reset for next message
 					}
 				}
+			}
+
+			// Trigger navigation callback after streaming completes
+			if (onNavigate) {
+				onNavigate(newExplanation.id);
 			}
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to get explanation';
@@ -143,84 +206,15 @@ function App() {
 		}
 	}, []);
 
-	const handleSelectHistory = useCallback((explanation: Explanation) => {
-		setCurrentExplanation(explanation);
-		setError(null);
-		setIsMobileMenuOpen(false);
-		hamburgerRef.current?.focus();
-	}, []);
-
-	const closeMobileMenu = useCallback(() => {
-		setIsMobileMenuOpen(false);
-		hamburgerRef.current?.focus();
-	}, []);
-
-	const handleReset = useCallback(() => {
-		setCurrentExplanation(null);
-		setError(null);
-	}, []);
-
 	return (
-		<div className="app">
-			<header className="app-header">
-				<button
-					ref={hamburgerRef}
-					className="hamburger-button"
-					onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-					aria-label="Toggle menu"
-				>
-					{isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-				</button>
-				<button
-					className="app-title"
-					onClick={handleReset}
-					aria-label="Go back to input"
-				>
-					XC
-				</button>
-			</header>
-
-			<div className="app-layout">
-				{isMobileMenuOpen && (
-					<div
-						className="mobile-drawer-overlay"
-						onClick={closeMobileMenu}
-					/>
-				)}
-
-				<aside className={`history-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-					<HistoryPanel
-						explanations={explanations}
-						onSelect={handleSelectHistory}
-						selectedId={currentExplanation?.id}
-					/>
-				</aside>
-
-				<main className="main-content">
-					{error && (
-						<div className="error-banner">
-							<AlertCircle size={16} />
-							<span>{error}</span>
-						</div>
-					)}
-
-					{!currentExplanation ? (
-						<>
-							{isLoading && <SkeletonLoader />}
-							<CodeInput onExplain={handleExplain} isLoading={isLoading} hiddenDuringLoad={isLoading} />
-						</>
-					) : (
-						<ExplanationDisplay explanation={currentExplanation} />
-					)}
-
-					{currentExplanation && (
-						<div className="new-explanation-container">
-							<CodeInput onExplain={handleExplain} isLoading={isLoading} compact />
-						</div>
-					)}
-				</main>
-			</div>
-		</div>
+		<BrowserRouter>
+			<Layout explanations={explanations}>
+				<Routes>
+					<Route path="/" element={<InputView onExplain={handleExplain} isLoading={isLoading} error={error} />} />
+					<Route path="/explain/:id" element={<ExplanationView explanations={explanations} />} />
+				</Routes>
+			</Layout>
+		</BrowserRouter>
 	);
 }
 
