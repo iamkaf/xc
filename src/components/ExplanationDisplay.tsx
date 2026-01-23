@@ -8,6 +8,7 @@ import './ExplanationDisplay.css';
 
 interface ExplanationDisplayProps {
 	explanation: {
+		title?: string;
 		code: string;
 		language: string;
 		explanation: string;
@@ -24,6 +25,7 @@ export function ExplanationDisplay({ explanation }: ExplanationDisplayProps) {
 				await loadLanguage(explanation.language);
 				const codeElement = codeBlockRef.current.querySelector('code');
 				if (codeElement) {
+					delete codeElement.dataset.highlighted;
 					hljs.highlightElement(codeElement);
 				}
 			}
@@ -34,50 +36,59 @@ export function ExplanationDisplay({ explanation }: ExplanationDisplayProps) {
 
 	return (
 		<div className="explanation-display">
-			<div className="code-panel" role="region" aria-label="Code display">
-				<div className="panel-header">
-					<span className="panel-title">Code</span>
-					<span className="language-badge">{explanation.language}</span>
+			{explanation.title && (
+				<h1 className="explanation-title">{explanation.title}</h1>
+			)}
+			
+			<div className="panels-layout">
+				<div className="code-panel" role="region" aria-label="Code display">
+					<div className="panel-header">
+						<span className="panel-title">Code</span>
+						<span className="language-badge">{explanation.language}</span>
+					</div>
+					<pre ref={codeBlockRef} className="code-block">
+						<code className={`language-${explanation.language}`}>
+							{explanation.code}
+						</code>
+					</pre>
 				</div>
-				<pre ref={codeBlockRef} className="code-block">
-					<code className={`language-${explanation.language}`}>
-						{explanation.code}
-					</code>
-				</pre>
-			</div>
 
-			<div className="explanation-panel" role="region" aria-label="Code explanation">
-				<div className="panel-header">
-					<span className="panel-title">Explanation</span>
-				</div>
-				<div className="explanation-content">
-					<ReactMarkdown
-						remarkPlugins={[remarkGfm]}
-						components={
-							{
-								code(props) {
-									const { className, children, ...rest } = props;
-									const match = /language-(\w+)/.exec(className || '');
-									const lang = match ? match[1] : '';
-									const inline = 'inline' in rest && rest.inline;
+				<div className="explanation-panel" role="region" aria-label="Code explanation">
+					<div className="panel-header">
+						<span className="panel-title">Explanation</span>
+					</div>
+					<div className="explanation-content">
+						<ReactMarkdown
+							remarkPlugins={[remarkGfm]}
+							components={
+								{
+									code(props) {
+										const { className, children, ...rest } = props;
+										const match = /language-(\w+)/.exec(className || '');
+										const lang = match ? match[1] : '';
+										const inline = 'inline' in rest && rest.inline;
 
-									if (!inline && lang) {
-										return (
-											<code className={className} {...rest} ref={(codeEl) => {
-												if (codeEl) hljs.highlightElement(codeEl);
-											}}>
-												{children}
-											</code>
-										);
-									}
+										if (!inline && lang) {
+											return (
+												<code className={className} {...rest} ref={(codeEl) => {
+													if (codeEl) {
+														delete codeEl.dataset.highlighted;
+														hljs.highlightElement(codeEl);
+													}
+												}}>
+													{children}
+												</code>
+											);
+										}
 
-									return <code className={className} {...rest}>{children}</code>;
-								},
-							} as Components
-						}
-					>
-						{explanation.explanation}
-					</ReactMarkdown>
+										return <code className={className} {...rest}>{children}</code>;
+									},
+								} as Components
+							}
+						>
+							{explanation.explanation}
+						</ReactMarkdown>
+					</div>
 				</div>
 			</div>
 		</div>

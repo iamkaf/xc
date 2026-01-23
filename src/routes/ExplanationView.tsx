@@ -3,6 +3,7 @@ import { ExplanationDisplay } from '../components/ExplanationDisplay';
 
 interface Explanation {
 	id: string;
+	title?: string;
 	code: string;
 	language: string;
 	explanation: string;

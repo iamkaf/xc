@@ -8,6 +8,7 @@ import './App.css';
 
 interface Explanation {
 	id: string;
+	title?: string;
 	code: string;
 	language: string;
 	explanation: string;
@@ -109,7 +110,7 @@ function App() {
 		}
 	}, [explanations, debouncedSave]);
 
-	const handleExplain = useCallback(async (code: string, language: string, onNavigate?: (id: string) => void) => {
+	const handleExplain = useCallback(async (code: string, initialLanguage: string, onNavigate?: (id: string) => void) => {
 		setIsLoading(true);
 		setError(null);
 
@@ -117,7 +118,7 @@ function App() {
 		const newExplanation: Explanation = {
 			id: Date.now().toString(),
 			code,
-			language,
+			language: initialLanguage,
 			explanation: '',
 			timestamp: Date.now(),
 		};
@@ -128,7 +129,7 @@ function App() {
 			const response = await fetch('/api/explain', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ code, language }),
+				body: JSON.stringify({ code, language: initialLanguage }),
 			});
 
 			if (!response.ok) {
@@ -144,50 +145,89 @@ function App() {
 				throw new Error('No response body');
 			}
 
+			let accumulatedJson = '';
+			let sseBuffer = '';
+			let streamBuffer = '';
+
 			while (true) {
 				const { value, done } = await reader.read();
 				if (done) break;
 
-				const chunk = decoder.decode(value);
-				const lines = chunk.split('\n');
-
-				// SSE format can have multi-line JSON, so we need to accumulate data: "data: {...json}"
-				// We'll process each SSE message by accumulating lines until we get complete JSON
-				let sseMessage = '';
+				const chunk = decoder.decode(value, { stream: true });
+				streamBuffer += chunk;
+				const lines = streamBuffer.split('\n');
+				streamBuffer = lines.pop() || '';
 
 				for (const line of lines) {
 					if (!line) continue;
 
 					if (line.startsWith('data: ')) {
-						// Start of a new SSE message
-						sseMessage = line.slice(5); // Everything after "data:"
-					} else if (sseMessage) {
-						// Continuation of the SSE message
-						sseMessage += '\n' + line;
+						sseBuffer = line.slice(5);
+					} else if (sseBuffer) {
+						sseBuffer += '\n' + line;
 					} else {
-						// Not SSE data (shouldn't happen in well-formed SSE)
 						continue;
 					}
 
-					// Check if we have a complete SSE message
-					if (sseMessage.trim().endsWith('}')) {
+					if (sseBuffer.trim().endsWith('}')) {
 						try {
-							const parsed = JSON.parse(sseMessage);
+							const parsed = JSON.parse(sseBuffer);
 							const content = parsed.choices?.[0]?.delta?.content;
+							
 							if (content) {
+								accumulatedJson += content;
+
+								// Extract fields from the accumulated JSON string
+								let title = '';
+								let language = initialLanguage;
+								let explanation = '';
+
+								// Extract title (regex to match "title": "...")
+								const titleMatch = /"title"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(accumulatedJson);
+								if (titleMatch) title = titleMatch[1];
+
+								// Extract language
+								const langMatch = /"language"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(accumulatedJson);
+								if (langMatch) language = langMatch[1];
+
+								// Extract explanation
+								const expMatch = /"explanation"\s*:\s*"/.exec(accumulatedJson);
+								if (expMatch) {
+									const startIndex = expMatch.index + expMatch[0].length;
+									let contentSlice = accumulatedJson.slice(startIndex);
+									
+									// Try to find the end of the JSON string
+									// We look for the sequence quote + optional space + closing brace
+									// But strictly speaking, we just want to render what we have so far
+									// taking care of escaped characters.
+									
+									// If the JSON is complete or this field is closed, we might see `"` followed by `}` or `,`
+									// Since "explanation" is the last field, we look for `"}`
+									const endMatch = /"[\s\r\n]*}/.exec(contentSlice);
+									if (endMatch) {
+										contentSlice = contentSlice.slice(0, endMatch.index);
+									}
+									
+									// decode the partial string
+									explanation = contentSlice
+										.replace(/\\n/g, '\n')
+										.replace(/\\"/g, '"')
+										.replace(/\\\\/g, '\\')
+										.replace(/\\t/g, '\t');
+								}
+
 								setExplanations(prev =>
 									prev.map(exp =>
 										exp.id === newExplanation.id
-											? { ...exp, explanation: exp.explanation + content }
+											? { ...exp, title, language, explanation }
 											: exp
 									)
 								);
 							}
 						} catch (e) {
-							// If JSON parsing fails, log the raw message for debugging
-							console.warn('Failed to parse SSE message:', sseMessage, e);
+							console.warn('Failed to parse SSE message:', sseBuffer, e);
 						}
-						sseMessage = ''; // Reset for next message
+						sseBuffer = '';
 					}
 				}
 			}

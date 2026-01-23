@@ -37,14 +37,15 @@ export default {
 				body: JSON.stringify({
 					model: 'google/gemini-2.5-flash-lite',
 					stream: true,
+					response_format: { type: 'json_object' },
 					messages: [
 						{
 							role: 'system',
-							content: 'You are a code explanation assistant. Explain the given code snippet clearly and concisely. Focus on what the code does, how it works, and any important patterns or concepts. Use markdown formatting. Be direct and technical - assume the reader is a developer. Start with an executive summary followed by the full explanation. Don\'t offer follow ups as this is a one-off interaction.',
+							content: 'You are a code explanation assistant. Analyze the given code snippet and return a JSON object with three keys:\n1. "title": A short, descriptive title for the code snippet (max 50 chars).\n2. "language": The programming language of the code (e.g., "typescript", "python").\n3. "explanation": A detailed, clear explanation of what the code does, how it works, and important concepts. Use markdown formatting within this string.\nBe direct and technical.',
 						},
 						{
 							role: 'user',
-							content: `Explain this ${language} code:\n\n\`\`\`${language}\n${code}\n\`\`\``,
+							content: `Analyze this code:\n\n\`\`\`${language}\n${code}\n\`\`\``,
 						},
 					],
 				}),

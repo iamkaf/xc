@@ -4,6 +4,7 @@ import './HistoryPanel.css';
 
 interface Explanation {
 	id: string;
+	title?: string;
 	code: string;
 	language: string;
 	explanation: string;
@@ -59,13 +60,15 @@ export function HistoryPanel({ explanations }: HistoryPanelProps) {
 							className={`history-item ${explanation.id === getCurrentId() ? 'selected' : ''}`}
 							role="option"
 							aria-selected={explanation.id === getCurrentId()}
-							aria-label={`${explanation.language} code, ${formatTimestamp(explanation.timestamp)}`}
+							aria-label={`${explanation.title || explanation.language} code, ${formatTimestamp(explanation.timestamp)}`}
 						>
 							<div className="history-item-meta">
 								<span className="history-language">{explanation.language}</span>
 								<span className="history-time">{formatTimestamp(explanation.timestamp)}</span>
 							</div>
-							<div className="history-item-preview">{getCodePreview(explanation.code)}</div>
+							<div className="history-item-preview">
+								{explanation.title || getCodePreview(explanation.code)}
+							</div>
 						</Link>
 					))}
 				</div>
